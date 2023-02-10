@@ -1,0 +1,86 @@
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"os"
+
+	"github.com/gorilla/mux"
+	"github.com/satori/go.uuid"
+)
+
+var users = map[string]string{}
+var images = map[string][]string{}
+
+func main() {
+	router := mux.NewRouter()
+
+	// Endpoint untuk sign up
+	router.HandleFunc("/signup", SignUp).Methods("POST")
+
+	// Endpoint untuk login
+	router.HandleFunc("/login", Login).Methods("POST")
+
+	// Endpoint untuk upload gambar profil
+	router.HandleFunc("/upload", UploadImage).Methods("POST")
+
+	// Endpoint untuk menghapus gambar profil
+	router.HandleFunc("/delete/{id}", DeleteImage).Methods("DELETE")
+
+	fmt.Println("Starting server at port :8080")
+	http.ListenAndServe(":8080", router)
+}
+
+// Fungsi SignUp menangani proses sign up user baru
+func SignUp(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	if username == "" || password == "" {
+		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		return
+	}
+
+	if _, ok := users[username]; ok {
+		http.Error(w, "Username already exists", http.StatusBadRequest)
+		return
+	}
+
+	users[username] = password
+	w.Write([]byte("Sign up success"))
+}
+
+// Fungsi Login menangani proses login user
+func Login(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	if username == "" || password == "" {
+		http.Error(w, "Username and password are required", http.StatusBadRequest)
+		return
+	}
+
+	if p, ok := users[username]; !ok || p != password {
+		http.Error(w, "Username or password is incorrect", http.StatusUnauthorized)
+		return
+	}
+
+	w.Write([]byte("Login success"))
+}
+
+// Fungsi UploadImage menangani proses upload gambar profil
+func UploadImage(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	if username == "" || password == "" {
+		http.Error(w, "Username and password are required", http.StatusUnauthorized)
+		return
+	}
+
+	if p, ok := users[username]; !ok || p != password {
+		http.Error(w, "Username or password is incorrect", http.StatusUnauthorized)
+		return
+	}
+
+	file, header, err := r.
